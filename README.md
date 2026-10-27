@@ -18,7 +18,7 @@ This is a native Lynx Explorer reproduction, not a WebCore test or registry-dele
 Use Node.js 22.12+ and pnpm 10.34.6:
 
 ```sh
-pnpm setup
+pnpm run setup
 pnpm build
 pnpm serve
 ```
