@@ -1,0 +1,14 @@
+{
+  "name": "external-mts-new",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@lynx-js/react": "0.129.0",
+    "@lynx-js/react-rsbuild-plugin": "0.22.0",
+    "@lynx-js/react-umd": "0.129.0",
+    "@lynx-js/external-bundle-rsbuild-plugin": "0.4.3",
+    "@lynx-js/lynx-bundle-rslib-config": "0.8.1",
+    "@rsbuild/core": "2.2.9",
+    "@rslib/core": "1.0.2"
+  }
+}
