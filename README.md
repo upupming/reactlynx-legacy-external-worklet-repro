@@ -13,6 +13,8 @@ main-thread.js exception: cannot read property 'bind' of undefined
 
 This is a native Lynx Explorer reproduction, not a WebCore test or registry-deletion fault injection. The effect triggers automatically after mounting; no tap is required.
 
+Upstream issue: https://github.com/lynx-family/lynx-stack/issues/4260
+
 ## Run
 
 Use Node.js 22.12+ and pnpm 10.34.6:
