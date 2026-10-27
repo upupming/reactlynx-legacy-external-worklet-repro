@@ -92,6 +92,8 @@ Open `/new-page-fixed-lynx/main.lynx.bundle`. This replaces only the page's load
 
 Native validation on the same Android Explorer: both `EXTERNAL_MTS_EXECUTED 411.66666666666663` and `PAGE_MTS_EXECUTED` appear, all three worklet IDs are registered, and no `.bind` exception occurs. The fix keeps eager bundle prefetching but defers synchronous section evaluation until the external is imported. Async externals are unchanged.
 
+One cold open of the fixed public fixture hit the existing 2-second external fetch timeout (`code: -2`), before runtime initialization. Reopening the same unmodified build passed. This is separate from the deterministic missing-worklet failure in the original loader.
+
 SHA-256 of both failing and fixed cases' unchanged external bundles:
 
 ```text
