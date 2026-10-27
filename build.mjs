@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const root = import.meta.dirname;
 const [version = 'old', kind = 'page', target = 'lynx', componentVersion = 'old'] = process.argv.slice(2);
-const caseName = `${version}-${kind}${kind === 'page' && componentVersion !== 'old' ? '-newcomp' : ''}-${target}`;
+const caseName = `${version}-${kind}${kind === 'page' && componentVersion !== 'old' ? '-newcomp' : ''}${process.env.EXTERNALS_LOADING_PLUGIN ? '-fixed' : ''}-${target}`;
 const cwd = path.join(root, version);
 process.chdir(cwd);
 process.env.NODE_ENV = 'development';
@@ -17,6 +17,19 @@ await mkdir(metadata, { recursive: true });
 const capture = {
   name: 'capture-mts-minimal',
   setup(api) {
+    // Optional local checkout of the proposed fix. Default builds stay broken.
+    if (process.env.EXTERNALS_LOADING_PLUGIN) {
+      api.modifyRspackConfig({ order: 'post', async handler(config) {
+        const { ExternalsLoadingPlugin } = await import(pathToFileURL(process.env.EXTERNALS_LOADING_PLUGIN));
+        let replaced = 0;
+        config.plugins = config.plugins.map(plugin => {
+          if (plugin?.constructor?.name !== 'ExternalsLoadingPlugin') return plugin;
+          replaced++;
+          return new ExternalsLoadingPlugin(plugin.options);
+        });
+        if (!replaced) throw new Error('ExternalsLoadingPlugin not found');
+      } });
+    }
     api.modifyRspackConfig(config => {
       const { LynxTemplatePlugin } = api.useExposed(Symbol.for('LynxTemplatePlugin'));
       config.plugins.push({

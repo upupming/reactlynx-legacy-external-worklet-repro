@@ -15,6 +15,8 @@ This is a native Lynx Explorer reproduction, not a WebCore test or registry-dele
 
 Upstream issue: https://github.com/lynx-family/lynx-stack/issues/4260
 
+Proposed minimal fix: https://github.com/lynx-family/lynx-stack/pull/4262
+
 ## Run
 
 Use Node.js 22.12+ and pnpm 10.34.6:
@@ -76,6 +78,26 @@ There is no initialized runtime yet. The old helper tries to load the page's leg
 The old component build generates an intermediate `worklet-runtime.js`, but its final external encoder inputs only retain the component's BTS/MTS custom sections. An intermediate file does not prove that the final external owns that chunk.
 
 This failure is distinct from `loadWorkletRuntime is not a function`: the 0.126.2 UMD already exports the helper. Restoring that export alone does not make a missing legacy chunk or early runtime initialization available.
+
+## Verify the import-order fix
+
+Build a local `lynx-stack` checkout containing the fix using its documented root Turbo workflow, then point this fixture at the built loader:
+
+```sh
+EXTERNALS_LOADING_PLUGIN=/absolute/path/to/lynx-stack/packages/webpack/externals-loading-webpack-plugin/lib/index.js \
+  node build.mjs new page lynx
+```
+
+Open `/new-page-fixed-lynx/main.lynx.bundle`. This replaces only the page's loader plugin; the old component and React UMD remain unchanged. Do not set the environment variable for `pnpm build`, because that would also change the control builds.
+
+Native validation on the same Android Explorer: both `EXTERNAL_MTS_EXECUTED 411.66666666666663` and `PAGE_MTS_EXECUTED` appear, all three worklet IDs are registered, and no `.bind` exception occurs. The fix keeps eager bundle prefetching but defers synchronous section evaluation until the external is imported. Async externals are unchanged.
+
+SHA-256 of both failing and fixed cases' unchanged external bundles:
+
+```text
+comp.lynx.bundle   c3a564d613ea1b1424ed88e9c2a580dd551cbcc66ac8eaca19ba9795632de101
+react.lynx.bundle  1cf9350f2c089ae32d3128faa378ecaaa5c4502d6ffde308ca984b52c33f37c4
+```
 
 ## Inspect the output
 
