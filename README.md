@@ -90,7 +90,7 @@ EXTERNALS_LOADING_PLUGIN=/absolute/path/to/lynx-stack/packages/webpack/externals
 
 Open `/new-page-fixed-lynx/main.lynx.bundle`. This replaces only the page's loader plugin; the old component and React UMD remain unchanged. Do not set the environment variable for `pnpm build`, because that would also change the control builds.
 
-Native validation on the same Android Explorer: both `EXTERNAL_MTS_EXECUTED 411.66666666666663` and `PAGE_MTS_EXECUTED` appear, all three worklet IDs are registered, and no `.bind` exception occurs. The fix keeps eager bundle prefetching but defers synchronous section evaluation until the external is imported. Async externals are unchanged.
+Native validation on the same Android Explorer: both `EXTERNAL_MTS_EXECUTED 411.66666666666663` and `PAGE_MTS_EXECUTED` appear, all three worklet IDs are registered, and no `.bind` exception occurs. The fix keeps eager bundle prefetching but defers both synchronous and asynchronous section evaluation until the external is imported.
 
 One cold open of the fixed public fixture hit the existing 2-second external fetch timeout (`code: -2`), before runtime initialization. Reopening the same unmodified build passed. This is separate from the deterministic missing-worklet failure in the original loader.
 
@@ -100,6 +100,30 @@ SHA-256 of both failing and fixed cases' unchanged external bundles:
 comp.lynx.bundle   c3a564d613ea1b1424ed88e9c2a580dd551cbcc66ac8eaca19ba9795632de101
 react.lynx.bundle  1cf9350f2c089ae32d3128faa378ecaaa5c4502d6ffde308ca984b52c33f37c4
 ```
+
+## Async component control
+
+Keep the old component and React UMD unchanged, but load the component asynchronously:
+
+```sh
+COMPONENT_ASYNC=1 node build.mjs new page lynx
+COMPONENT_ASYNC=1 \
+EXTERNALS_LOADING_PLUGIN=/absolute/path/to/lynx-stack/packages/webpack/externals-loading-webpack-plugin/lib/index.js \
+  node build.mjs new page lynx
+```
+
+Open `/new-page-async-lynx/main.lynx.bundle` and `/new-page-async-fixed-lynx/main.lynx.bundle`. React UMD stays synchronous because the old precompiled component expects a plain React namespace. Both static-import async controls passed on native Explorer 4.4. This control does **not** reproduce the sync `.bind` failure before the fix.
+
+The PR additionally tests an async initializer that imports an async runtime, followed by a dynamic component import. Actual Rspack-generated code evaluates in this order:
+
+```text
+Before: load component (ready=false) -> load runtime -> initialize -> run
+After:  load runtime -> initialize -> load component (ready=true) -> run
+```
+
+This demonstrates why async loading must also wait for its import, even when the download is already complete. It does not impose ordering between independent async sibling imports; a consumer that needs an async initializer must explicitly depend on its completion.
+
+The accessor is one-shot: first access replaces it with a writable data property. Sync exports are cached directly; async loads cache the Promise immediately, before it settles. Repeated access, pending concurrent imports, and shared-section aliases do not call `loadScript` again. A synchronous throw leaves the accessor for a later retry; a rejected async Promise remains cached.
 
 ## Inspect the output
 

@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const root = import.meta.dirname;
 const [version = 'old', kind = 'page', target = 'lynx', componentVersion = 'old'] = process.argv.slice(2);
-const caseName = `${version}-${kind}${kind === 'page' && componentVersion !== 'old' ? '-newcomp' : ''}${process.env.EXTERNALS_LOADING_PLUGIN ? '-fixed' : ''}-${target}`;
+const caseName = `${version}-${kind}${kind === 'page' && componentVersion !== 'old' ? '-newcomp' : ''}${process.env.COMPONENT_ASYNC === '1' ? '-async' : ''}${process.env.EXTERNALS_LOADING_PLUGIN ? '-fixed' : ''}-${target}`;
 const cwd = path.join(root, version);
 process.chdir(cwd);
 process.env.NODE_ENV = 'development';
@@ -87,7 +87,7 @@ if (kind === 'component') {
         bundlePath: bundle, libraryName: 'PanelLib',
         background: { sectionPath: 'PanelLib' },
         mainThread: { sectionPath: 'PanelLib__main-thread' },
-        async: target === 'web',
+        async: target === 'web' || process.env.COMPONENT_ASYNC === '1',
       } },
     })],
   } });
